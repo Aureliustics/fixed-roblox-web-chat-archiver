@@ -20,7 +20,7 @@ print("fetching conversations...", flush=True, end="")
 next_cursor = ""
 while True:
     resp_json = session.get(f"https://apis.roblox.com/platform-chat-api/v1/get-user-conversations?cursor={next_cursor}").json()
-    next_cursor = resp_json['next_cursor']
+    next_cursor = resp_json.get('next_cursor') # using .get() to prevent crash if field is missing
 
     if not next_cursor:
         break
@@ -45,13 +45,22 @@ for convoId in conversations.copy():
 
     next_cursor = ""
     while True:
-        resp_json = session.get(f"https://apis.roblox.com/platform-chat-api/v1/get-conversation-messages?conversation_id={convo['id']}&cursor={next_cursor}").json()
-        next_cursor = resp_json['next_cursor']
+        resp = session.get(
+            "https://apis.roblox.com/platform-chat-api/v1/get-conversation-messages",
+            params = {
+                "conversation_id": convo["id"],
+                "cursor": next_cursor
+            }
+        )
+
+        resp_json = resp.json()
+
+        messages += resp_json.get("messages", [])
+
+        next_cursor = resp_json.get("next_cursor")
 
         if not next_cursor:
             break
-
-        messages += resp_json['messages']
 
     count = len(messages)
     if count == 0:
